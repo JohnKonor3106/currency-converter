@@ -16,7 +16,6 @@ const CurrencySelect = ({ options, handleChange, value }) => {
       {options.map(({ code, id }) => (
         <option key={id} value={code}>
           {' '}
-          {/* <- КРИТИЧНО: value опции должно быть её кодом */}
           {code}
         </option>
       ))}

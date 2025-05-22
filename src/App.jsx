@@ -1,72 +1,136 @@
-import { useState } from 'react';
-import ConverterForm from './components/Form/ConverterForm';
-import ConvertDisplay from './components/Display/ResultDisplay';
+import { useImmerReducer } from 'use-immer';
+import { uniqueId } from 'lodash';
+import ExchangeTab from './components/Exchange-tabs/tabs';
+import ConverterForm from './components/Exchange-converter/Form/ConverterForm';
+import ConvertDisplay from './components/Exchange-converter/Display/ResultDisplay';
 import { ConvertContext } from './components/StateApp/stateApp';
-import { uniqueId } from 'lodash'; // Используется только при инициализации
+import getExchangeRate from './components/Servies/exchangeApi';
+import convertCurrency from './components/Servies/converterApi';
+import reducerConvert from './Reducer/reducer';
+import ExchangeTable from './components/Exchange-rate-table/Table';
 
 function App() {
-  const [currency, setCurrency] = useState({
-    amount: '',
-    currency: {
-      // Вложенность 'currency.currency' все еще может быть упрощена
+  const initState = {
+    converter: {
+      amount: '',
       list: [
-        // Этот список используется как статический, но с уникальными ID
-        { code: 'USD', id: uniqueId() },
-        { code: 'RUB', id: uniqueId() },
-        { code: 'EUR', id: uniqueId() }, // Добавим для примера
+        { code: 'USD', id: uniqueId('curr-') },
+        { code: 'RUB', id: uniqueId('curr-') },
+        { code: 'EUR', id: uniqueId('curr-') },
+        { code: 'GBP', id: uniqueId('curr-') },
       ],
       from: '',
       to: '',
+      result: null,
+      loading: false,
     },
-    result: null,
-    loading: false,
-    error: null,
-  });
-
-  // Правильно используете prevSate для обновления вложенного состояния
-  const setValueCurrencyFrom = e => {
-    setCurrency(prevState => ({
-      ...prevState,
-      currency: {
-        // Необходимо обновить вложенный объект 'currency'
-        ...prevState.currency,
-        from: e.target.value,
-      },
-    }));
+    exchangeRate: {
+      basicCode: '',
+      list: [
+        { code: 'USD', id: uniqueId('curr-') },
+        { code: 'RUB', id: uniqueId('curr-') },
+        { code: 'EUR', id: uniqueId('curr-') },
+        { code: 'GBP', id: uniqueId('curr-') },
+      ],
+      currencyExchangeRate: null,
+      loading: false,
+      error: null,
+    },
+    tabs: {
+      list: [
+        { title: 'Converter', id: uniqueId() },
+        { title: 'Exchange rate', id: uniqueId() },
+      ],
+      active: 'Converter',
+    },
+    errors: null,
   };
 
-  const setValueCurrencyTo = e => {
-    setCurrency(prevState => ({
-      ...prevState,
-      currency: {
-        // Необходимо обновить вложенный объект 'currency'
-        ...prevState.currency,
-        to: e.target.value,
-      },
-    }));
+  const [convertState, dispatch] = useImmerReducer(reducerConvert, initState);
+
+  const setValueCurrencyFrom = ({ target: value }) => {
+    dispatch({ type: 'ADD_CURRENCY_FROM', payload: value });
   };
 
-  // Функция для обновления поля "amount"
-  const setAmount = e => {
-    setCurrency(prevState => ({
-      ...prevState,
-      amount: e.target.value,
-    }));
+  const setBasicCode = e => {
+    dispatch({ type: 'ADD_BASE_CODE_CURRENCY', payload: e.target.value });
+    console.log(convertState.exchangeRate.basicCode);
+  };
+
+  const handleConversionRates = async () => {
+    try {
+      dispatch({ type: 'LOADING_DATA', payload: { status: true } });
+      const exchangeRateData = await getExchangeRate(
+        convertState.exchangeRate.basicCode
+      );
+
+      dispatch({ type: 'ADD_EXCHANGE_RATE_DATA', payload: exchangeRateData });
+      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
+    } catch (err) {
+      dispatch({ type: 'ERROR_HEADING', payload: { errors: err.message } });
+      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
+      console.error('Ошибка при получение курса валют:', err.message);
+    }
+  };
+
+  const handleActiveTab = eventKey => {
+    dispatch({
+      type: 'CHANGE_ACTIVE_TAB',
+      payload: eventKey,
+    });
+  };
+
+  const setValueCurrencyTo = ({ target: value }) => {
+    dispatch({ type: 'ADD_CURRENCY_TO', payload: value });
+  };
+
+  const setAmount = ({ target: value }) => {
+    dispatch({ type: 'ADD_CURRENCY_AMOUNT', payload: value });
+    console.log(convertState.converter.amount);
+  };
+
+  const handleConvert = async () => {
+    const { amount, from, to } = convertState.converter;
+    try {
+      dispatch({ type: 'LOADING_DATA', payload: { status: true } });
+      const currencyRate = await convertCurrency({ amount, from, to });
+
+      dispatch({ type: 'CURRENCY_CONVERTING', payload: currencyRate.result });
+      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
+    } catch (err) {
+      dispatch({ type: 'ERROR_HEADING', payload: { err: err.message } });
+      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
+      console.error('Ошибка при конвертации валюты:', err.message);
+    }
   };
 
   return (
     <>
       <ConvertContext.Provider
         value={{
-          currentCurrency: currency,
-          // setCurrency: setCurrency, // Обычно не передают сам setCurrency в контекст, а только функции-обработчики
+          currentCurrency: convertState,
           setValueCurrencyFrom: setValueCurrencyFrom,
           setValueCurrencyTo: setValueCurrencyTo,
-          setAmount: setAmount, // Передаем функцию для обновления amount
+          setAmount: setAmount,
+          handleConvert: handleConvert,
+          handleActiveTab: handleActiveTab,
+          setBasicCode: setBasicCode,
+          handleConversionRates: handleConversionRates,
         }}
       >
-        <ConverterForm />
-        <ConvertDisplay />
+        <ExchangeTab />
+
+        {convertState.tabs.active === 'Converter' && (
+          <>
+            <ConverterForm />
+            <ConvertDisplay />
+          </>
+        )}
+        {convertState.tabs.active === 'Exchange rate' && (
+          <>
+            <ExchangeTable />
+          </>
+        )}
       </ConvertContext.Provider>
     </>
   );
