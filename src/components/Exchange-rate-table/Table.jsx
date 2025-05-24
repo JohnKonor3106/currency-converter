@@ -55,7 +55,6 @@ const ExchangeTable = () => {
             className='m-0 auto'
           >
             <Table striped bordered hover size='lg' className='m-0 auto'>
-              <Table.Body></Table.Body>
               <tbody>
                 {generateTableRows(currencyExchangeRate.conversionRates)}
               </tbody>
