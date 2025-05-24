@@ -7,7 +7,7 @@ import { ConvertContext } from './components/StateApp/stateApp';
 import getExchangeRate from './components/Servies/exchangeApi';
 import getExchangeChart from './components/Servies/exchangeChartApi';
 import convertCurrency from './components/Servies/converterApi';
-import reducerConvert from './Reducer/reducer';
+import reducerConvert from './Reducers/reducer';
 import ExchangeTable from './components/Exchange-rate-table/Table';
 import ExchangeChart from './components/Exchange_historical/ExchangeChart';
 

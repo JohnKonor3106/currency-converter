@@ -5,7 +5,7 @@ import { ConvertContext } from '../StateApp/stateApp';
 
 const ExchangeTab = () => {
   const { currentCurrency, handleActiveTab } = useContext(ConvertContext);
-  const { exchangeRate, tabs } = currentCurrency;
+  const { tabs } = currentCurrency;
 
   return (
     <Tabs
