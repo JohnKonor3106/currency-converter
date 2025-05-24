@@ -6,7 +6,7 @@ const convertCurrency = async ({ from, to, amount }) => {
     throw new Error('Не указаны все параметры или сумма некорректна');
   }
 
-  const apiKey = import.meta.env.VITE_API_KEY;
+  const apiKey = import.meta.env.VITE_API_KEY_EXCHANGE;
 
   if (!apiKey) {
     throw new Error('API-ключ не найден. Проверьте .env (VITE_API_KEY).');

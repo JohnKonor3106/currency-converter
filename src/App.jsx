@@ -5,9 +5,11 @@ import ConverterForm from './components/Exchange-converter/Form/ConverterForm';
 import ConvertDisplay from './components/Exchange-converter/Display/ResultDisplay';
 import { ConvertContext } from './components/StateApp/stateApp';
 import getExchangeRate from './components/Servies/exchangeApi';
+import getExchangeChart from './components/Servies/exchangeChartApi';
 import convertCurrency from './components/Servies/converterApi';
 import reducerConvert from './Reducer/reducer';
 import ExchangeTable from './components/Exchange-rate-table/Table';
+import ExchangeChart from './components/Exchange_historical/ExchangeChart';
 
 function App() {
   const initState = {
@@ -36,10 +38,24 @@ function App() {
       loading: false,
       error: null,
     },
+    exchangeChart: {
+      exchangeData: null,
+      currency: {
+        list: [
+          { code: 'USD', id: uniqueId('curr-') },
+          { code: 'RUB', id: uniqueId('curr-') },
+          { code: 'EUR', id: uniqueId('curr-') },
+          { code: 'GBP', id: uniqueId('curr-') },
+        ],
+        from: '',
+        to: '',
+      },
+    },
     tabs: {
       list: [
         { title: 'Converter', id: uniqueId() },
         { title: 'Exchange rate', id: uniqueId() },
+        { title: 'Exchange chart', id: uniqueId() },
       ],
       active: 'Converter',
     },
@@ -48,10 +64,33 @@ function App() {
 
   const [convertState, dispatch] = useImmerReducer(reducerConvert, initState);
 
+  const setAmount = ({ target: value }) => {
+    dispatch({ type: 'ADD_CURRENCY_AMOUNT', payload: value });
+    console.log(convertState.converter.amount);
+  };
+
   const setValueCurrencyFrom = ({ target: value }) => {
     dispatch({ type: 'ADD_CURRENCY_FROM', payload: value });
   };
 
+  const setValueCurrencyTo = ({ target: value }) => {
+    dispatch({ type: 'ADD_CURRENCY_TO', payload: value });
+  };
+
+  const handleConvert = async () => {
+    const { amount, from, to } = convertState.converter;
+    try {
+      dispatch({ type: 'LOADING_DATA', payload: { status: true } });
+      const currencyRate = await convertCurrency({ amount, from, to });
+
+      dispatch({ type: 'CURRENCY_CONVERTING', payload: currencyRate.result });
+      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
+    } catch (err) {
+      dispatch({ type: 'ERROR_HEADING', payload: { err: err.message } });
+      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
+      console.error('Ошибка при конвертации валюты:', err.message);
+    }
+  };
   const setBasicCode = e => {
     dispatch({ type: 'ADD_BASE_CODE_CURRENCY', payload: e.target.value });
     console.log(convertState.exchangeRate.basicCode);
@@ -73,35 +112,34 @@ function App() {
     }
   };
 
+  const setExchangeChartFrom = e => {
+    dispatch({ type: 'ADD_CURRENCY_FOR_CHART_FROM', payload: e.target.value });
+  };
+
+  const setExchangeChartTo = e => {
+    dispatch({ type: 'ADD_CURRENCY_FOR_CHART_TO', payload: e.target.value });
+  };
+
+  const handleExchangeChart = async () => {
+    const { from, to } = convertState.exchangeChart.currency;
+    try {
+      dispatch({ type: 'LOADING_DATA', payload: { status: true } });
+      const exchangeChartData = await getExchangeChart({ from, to });
+
+      dispatch({ type: 'ADD_EXCHANGE_CHART_DATA', payload: exchangeChartData });
+      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
+    } catch (err) {
+      dispatch({ type: 'ERROR_HEADING', payload: { errors: err.message } });
+      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
+      console.error('Ошибка при получение графикв валют:', err.message);
+    }
+  };
+
   const handleActiveTab = eventKey => {
     dispatch({
       type: 'CHANGE_ACTIVE_TAB',
       payload: eventKey,
     });
-  };
-
-  const setValueCurrencyTo = ({ target: value }) => {
-    dispatch({ type: 'ADD_CURRENCY_TO', payload: value });
-  };
-
-  const setAmount = ({ target: value }) => {
-    dispatch({ type: 'ADD_CURRENCY_AMOUNT', payload: value });
-    console.log(convertState.converter.amount);
-  };
-
-  const handleConvert = async () => {
-    const { amount, from, to } = convertState.converter;
-    try {
-      dispatch({ type: 'LOADING_DATA', payload: { status: true } });
-      const currencyRate = await convertCurrency({ amount, from, to });
-
-      dispatch({ type: 'CURRENCY_CONVERTING', payload: currencyRate.result });
-      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
-    } catch (err) {
-      dispatch({ type: 'ERROR_HEADING', payload: { err: err.message } });
-      dispatch({ type: 'LOADING_DATA', payload: { status: false } });
-      console.error('Ошибка при конвертации валюты:', err.message);
-    }
   };
 
   return (
@@ -116,6 +154,9 @@ function App() {
           handleActiveTab: handleActiveTab,
           setBasicCode: setBasicCode,
           handleConversionRates: handleConversionRates,
+          setExchangeChartFrom: setExchangeChartFrom,
+          setExchangeChartTo: setExchangeChartTo,
+          handleExchangeChart: handleExchangeChart,
         }}
       >
         <ExchangeTab />
@@ -126,11 +167,8 @@ function App() {
             <ConvertDisplay />
           </>
         )}
-        {convertState.tabs.active === 'Exchange rate' && (
-          <>
-            <ExchangeTable />
-          </>
-        )}
+        {convertState.tabs.active === 'Exchange rate' && <ExchangeTable />}
+        {convertState.tabs.active === 'Exchange chart' && <ExchangeChart />}
       </ConvertContext.Provider>
     </>
   );

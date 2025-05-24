@@ -1,30 +1,41 @@
 import axios from 'axios';
-import errorHandling from '../Utils/utils';
 
-const getExchangeRate = async basicCode => {
-  const apiKey = import.meta.env.VITE_API_KEY_EXCHANGE;
+const getExchangeChart = async ({ from, to }) => {
+  const apiKey = import.meta.env.VITE_API_KEY_ALPHA;
 
   try {
-    const response = await axios.get(
-      `https://v6.exchangerate-api.com/v6/${apiKey}/latest/${basicCode}`
-    );
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
 
-    if (response.data.result === 'success') {
-      const timeLastUpdateUtc = response.data['time_last_update_utc'];
-      const conversionRates = Object.entries(response.data['conversion_rates']);
-      return { timeLastUpdateUtc, conversionRates };
+    const response = await axios.get(
+      `https://www.alphavantage.co/query?function=FX_WEEKLY&from_symbol=${from}&to_symbol=${to}&apikey=${apiKey}`
+    );
+    console.log(response.data);
+    if (response.status === 200) {
+      // Пример преобразования данных для графика
+      const timeSeries = response.data['Time Series FX (Weekly)'];
+      if (!timeSeries) {
+        throw new Error('No time series data found in Alpha Vantage response.');
+      }
+      const chartData = Object.entries(timeSeries)
+        .map(([date, dailyRates]) => ({
+          date: date,
+          value: parseFloat(dailyRates['4. close']),
+        }))
+        .reverse();
+      return chartData;
+    } else if (response.status !== 200) {
+      console.log(`Status: ${response.status}`);
     } else {
-      const errorType = response.data['error-type'];
-      let errorMessage = errorHandling(errorType);
-      throw new Error(errorMessage);
+      throw new Error(`Error: ${response.statusText}`);
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {
       // Проверка на ошибку Axios
       if (error.response) {
         // Ошибка получена с сервера (статус 4xx/5xx)
-        const apiErrorType =
-          error.response.data && error.response.data['error-type'];
+        const apiErrorType = error.response.data;
         throw new Error(
           `Ошибка сервера: ${apiErrorType || error.message || 'Неизвестная ошибка.'}`
         );
@@ -44,4 +55,4 @@ const getExchangeRate = async basicCode => {
   }
 };
 
-export default getExchangeRate;
+export default getExchangeChart;

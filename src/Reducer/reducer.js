@@ -25,6 +25,15 @@ const reducerConvert = (draft, action) => {
     case 'ADD_EXCHANGE_RATE_DATA':
       draft.exchangeRate.currencyExchangeRate = action.payload;
       break;
+    case 'ADD_CURRENCY_FOR_CHART_FROM':
+      draft.exchangeChart.currency.from = action.payload;
+      break;
+    case 'ADD_CURRENCY_FOR_CHART_TO':
+      draft.exchangeChart.currency.to = action.payload;
+      break;
+    case 'ADD_EXCHANGE_CHART_DATA':
+      draft.exchangeChart.exchangeData = action.payload;
+      break;
     case 'CHANGE_ACTIVE_TAB':
       draft.tabs.active = action.payload;
       break;
