@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { ConvertContext } from '../../StateApp/stateApp';
+import { ContextExchangeConverter } from '../../../Providers/ProviderExchangeConverter';
 
 const baseResultStyle = {
   width: '300px',
@@ -18,8 +18,8 @@ const baseResultStyle = {
 };
 
 const ConvertDisplay = () => {
-  const { currentCurrency } = useContext(ConvertContext);
-  const { result, loading, error } = currentCurrency.converter;
+  const { converter } = useContext(ContextExchangeConverter);
+  const { result, loading, error } = converter;
 
   let content;
   let dynamicColor = baseResultStyle.color || '#333'; // Цвет по умолчанию
@@ -28,7 +28,7 @@ const ConvertDisplay = () => {
     content = 'Конвертация...';
     dynamicColor = '#007bff'; // Синий для загрузки
   } else if (error) {
-    content = `Ошибка: ${error}`;
+    content = `Ошибка: ${error.message}`;
     dynamicColor = 'red'; // Красный для ошибки
   } else if (result !== null) {
     content = `Результат: ${result.toFixed(2)}`;

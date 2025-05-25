@@ -1,24 +1,36 @@
-import Tab from 'react-bootstrap/Tab';
-import Tabs from 'react-bootstrap/Tabs';
+import { ContextExchangeTabs } from '../../Providers/ProviderExchangeTabs';
+import ExchangeChart from '../Exchange_historical/ExchangeChart';
+import { Tabs, Tab } from 'react-bootstrap';
 import { useContext } from 'react';
-import { ConvertContext } from '../StateApp/stateApp';
+import ConverterForm from '../Exchange-converter/Form/ConverterForm';
+import ExchangeTable from '../Exchange-rate-table/Table';
 
 const ExchangeTab = () => {
-  const { currentCurrency, handleActiveTab } = useContext(ConvertContext);
-  const { tabs } = currentCurrency;
+  const { stateTab, handleActiveTab } = useContext(ContextExchangeTabs);
+  const renderTabContent = title => {
+    if (title === 'Converter') {
+      return <ConverterForm />;
+    } else if (title === 'Exchange rate') {
+      return <ExchangeTable />;
+    } else if (title === 'Exchange chart') {
+      return <ExchangeChart />;
+    }
+    return null;
+  };
 
   return (
     <Tabs
-      activeKey={tabs.active}
+      activeKey={stateTab.active}
       transition={true}
-      onSelect={handleActiveTab}
+      onSelect={eventKey => handleActiveTab(eventKey)}
       className='mb-3'
     >
-      {tabs.list.map(({ title, id }) => {
-        return <Tab key={id} eventKey={title} title={title}></Tab>;
-      })}
+      {stateTab.list.map(({ title, id }) => (
+        <Tab key={id} eventKey={title} title={title}>
+          {renderTabContent(title)}
+        </Tab>
+      ))}
     </Tabs>
   );
 };
-
 export default ExchangeTab;

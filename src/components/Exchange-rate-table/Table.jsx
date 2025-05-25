@@ -2,7 +2,7 @@ import React from 'react';
 import { Table } from 'react-bootstrap';
 import ExchangeButton from '../Exchange-converter/Button/ExchangeButton';
 import CurrencySelect from '../Exchange-converter/Select/CurrencySelect';
-import { ConvertContext } from '../StateApp/stateApp';
+import { ContextExchangeRate } from '../../Providers/ProviderExchangeRate';
 import { useContext } from 'react';
 
 const generateTableRows = data => {
@@ -18,9 +18,8 @@ const generateTableRows = data => {
 };
 
 const ExchangeTable = () => {
-  const { currentCurrency, setBasicCode, handleConversionRates } =
-    useContext(ConvertContext);
-  const { exchangeRate } = currentCurrency;
+  const { exchangeRate, setBasicCode, handleConversionRates } =
+    useContext(ContextExchangeRate);
   const { currencyExchangeRate } = exchangeRate;
 
   return (

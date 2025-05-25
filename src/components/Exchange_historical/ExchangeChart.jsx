@@ -10,18 +10,18 @@ import {
 } from 'recharts';
 
 import ExchangeButton from '../Exchange-converter/Button/ExchangeButton';
-import { ConvertContext } from '../StateApp/stateApp';
 import { useContext } from 'react';
+import { ContextExchangeChart } from '../../Providers/ProviderExchangeChart';
 import CurrencySelect from '../Exchange-converter/Select/CurrencySelect';
 
 const ExchangeChart = () => {
   const {
+    exchangeChart,
     handleExchangeChart,
-    currentCurrency,
     setExchangeChartFrom,
     setExchangeChartTo,
-  } = useContext(ConvertContext);
-  const { exchangeChart } = currentCurrency;
+  } = useContext(ContextExchangeChart);
+
   const { exchangeData } = exchangeChart;
 
   return (
