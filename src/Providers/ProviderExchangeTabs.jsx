@@ -1,7 +1,7 @@
 import React from 'react';
 import { uniqueId } from 'lodash';
 import { useImmerReducer } from 'use-immer';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 import { ContextGlobalError } from './ProviderGlobalError';
 import reducerExchangeTabs from '../Reducers/reducerExchangeTabs';
 
@@ -38,13 +38,16 @@ const ProviderExchangeTabs = ({ children }) => {
     handleClearError();
   }, [tabs.active]);
 
+  const valueExchangeTab = useMemo(
+    () => ({
+      stateTab: tabs,
+      handleActiveTab: handleActiveTab,
+    }),
+    [tabs, handleActiveTab]
+  );
+
   return (
-    <ContextExchangeTabs.Provider
-      value={{
-        stateTab: tabs,
-        handleActiveTab: handleActiveTab,
-      }}
-    >
+    <ContextExchangeTabs.Provider value={valueExchangeTab}>
       {children}
     </ContextExchangeTabs.Provider>
   );

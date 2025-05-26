@@ -1,6 +1,6 @@
 import { useImmerReducer } from 'use-immer';
 import { uniqueId } from 'lodash';
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import React from 'react';
 import reducerExchangeChart from '../Reducers/reducerExchangeChart';
 import { ContextGlobalError } from './ProviderGlobalError';
@@ -35,7 +35,7 @@ const ProviderExchangeChart = ({ children }) => {
 
   const setExchangeChartTo = e => {
     dispatch({ type: 'ADD_CURRENCY_FOR_CHART_TO', payload: e.target.value });
-    console.log(stateExchangeChart.currency.from);
+    console.log(stateExchangeChart.currency.to);
   };
 
   const handleExchangeChart = async () => {
@@ -53,12 +53,20 @@ const ProviderExchangeChart = ({ children }) => {
     }
   };
 
-  const valueExchangeChart = {
-    exchangeChart: stateExchangeChart,
-    setExchangeChartFrom: setExchangeChartFrom,
-    setExchangeChartTo: setExchangeChartTo,
-    handleExchangeChart: handleExchangeChart,
-  };
+  const valueExchangeChart = useMemo(
+    () => ({
+      exchangeChart: stateExchangeChart,
+      setExchangeChartFrom: setExchangeChartFrom,
+      setExchangeChartTo: setExchangeChartTo,
+      handleExchangeChart: handleExchangeChart,
+    }),
+    [
+      stateExchangeChart,
+      setExchangeChartFrom,
+      setExchangeChartTo,
+      handleExchangeChart,
+    ]
+  );
 
   return (
     <ContextExchangeChart.Provider value={valueExchangeChart}>

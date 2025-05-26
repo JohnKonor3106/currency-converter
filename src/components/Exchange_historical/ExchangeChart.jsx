@@ -10,11 +10,11 @@ import {
 } from 'recharts';
 
 import ExchangeButton from '../Exchange-converter/Button/ExchangeButton';
-import { useContext } from 'react';
+import React, { useContext, memo } from 'react';
 import { ContextExchangeChart } from '../../Providers/ProviderExchangeChart';
 import CurrencySelect from '../Exchange-converter/Select/CurrencySelect';
 
-const ExchangeChart = () => {
+const ExchangeChart = memo(() => {
   const {
     exchangeChart,
     handleExchangeChart,
@@ -25,7 +25,7 @@ const ExchangeChart = () => {
   const { exchangeData } = exchangeChart;
 
   return (
-    <>
+    <div className='d-block w-50 mx-auto mt-5'>
       <CurrencySelect
         options={exchangeChart.currency.list}
         value={exchangeChart.currency.from}
@@ -62,9 +62,10 @@ const ExchangeChart = () => {
       <ExchangeButton
         onClick={handleExchangeChart}
         text={'Excgange chart'}
+        style={'d-block w-50 mx-auto text-center mt-5 mb-5'}
       ></ExchangeButton>
-    </>
+    </div>
   );
-};
+});
 
-export default ExchangeChart;
+export default React.memo(ExchangeChart);

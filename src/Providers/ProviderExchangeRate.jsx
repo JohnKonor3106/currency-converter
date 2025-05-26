@@ -1,6 +1,6 @@
 import { useImmerReducer } from 'use-immer';
 import { uniqueId } from 'lodash';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useContext } from 'react';
 import { ContextGlobalError } from './ProviderGlobalError';
 import reducerExchangeRate from '../Reducers/reducerExchangeRate';
@@ -16,6 +16,8 @@ const initState = {
     { code: 'EUR', id: uniqueId('curr-') },
   ],
   currencyExchangeRate: null,
+  initCurrencyExchangeRate: null,
+  tern: '',
   loading: false,
 };
 
@@ -46,11 +48,25 @@ const ProviderExchangeRate = ({ children }) => {
     }
   };
 
-  const valueExchangeRate = {
-    exchangeRate: stateExchangeRate,
-    setBasicCode: setBasicCode,
-    handleConversionRates: handleConversionRates,
+  const handleFindRate = e => {
+    const newTernValue = e.target.value;
+
+    dispatch({ type: 'ADD_VALUE_TERN', payload: newTernValue });
+    dispatch({
+      type: 'FIND_CURRENCY',
+      payload: { tern: newTernValue },
+    });
   };
+
+  const valueExchangeRate = useMemo(
+    () => ({
+      exchangeRate: stateExchangeRate,
+      setBasicCode: setBasicCode,
+      handleConversionRates: handleConversionRates,
+      handleFindRate: handleFindRate,
+    }),
+    [stateExchangeRate, setBasicCode, handleConversionRates, handleFindRate]
+  );
 
   return (
     <ContextExchangeRate.Provider value={valueExchangeRate}>

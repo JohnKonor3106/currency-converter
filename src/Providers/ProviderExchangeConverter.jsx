@@ -1,9 +1,10 @@
 import { useImmerReducer } from 'use-immer';
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 import reducerConvert from '../Reducers/reducerConvert';
 import { ContextGlobalError } from './ProviderGlobalError';
 import { uniqueId } from 'lodash';
 import convertCurrency from '../components/Services/converterApi';
+
 export const ContextExchangeConverter = React.createContext({});
 
 const initState = {
@@ -35,6 +36,12 @@ const ProviderExchangeConverter = ({ children }) => {
     dispatch({ type: 'ADD_CURRENCY_TO', payload: e.target.value });
   };
 
+  const handleClickReverse = () => {
+    dispatch({ type: 'REVERSE_CURRENCY' });
+    console.log('from' + stateConverter.from);
+    console.log('from' + stateConverter.to);
+  };
+
   const handleConvert = async () => {
     const { amount, from, to } = stateConverter;
     try {
@@ -50,13 +57,24 @@ const ProviderExchangeConverter = ({ children }) => {
     }
   };
 
-  const valueProviderConvert = {
-    converter: stateConverter,
-    setAmount: setAmount,
-    setValueCurrencyFrom: setValueCurrencyFrom,
-    setValueCurrencyTo: setValueCurrencyTo,
-    handleConvert: handleConvert,
-  };
+  const valueProviderConvert = useMemo(
+    () => ({
+      converter: stateConverter,
+      setAmount: setAmount,
+      setValueCurrencyFrom: setValueCurrencyFrom,
+      setValueCurrencyTo: setValueCurrencyTo,
+      handleConvert: handleConvert,
+      handleClickReverse: handleClickReverse,
+    }),
+    [
+      stateConverter,
+      setAmount,
+      setValueCurrencyFrom,
+      setValueCurrencyTo,
+      handleClickReverse,
+      handleConvert,
+    ]
+  );
 
   return (
     <ContextExchangeConverter.Provider value={valueProviderConvert}>

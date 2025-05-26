@@ -1,16 +1,19 @@
 import React from 'react';
-import { useContext } from 'react';
+import { useContext, memo } from 'react';
 import { Form } from 'react-bootstrap';
 import { ContextExchangeConverter } from '../../../Providers/ProviderExchangeConverter';
 import ExchangeButton from '../Button/ExchangeButton';
 import CurrencySelect from '../Select/CurrencySelect';
 import ConvertDisplay from '../Display/ResultDisplay';
-const ConverterForm = () => {
+import ExchangeButtonReverse from '../Button/ExchangeButtonReverse';
+
+const ConverterForm = memo(() => {
   const {
     converter,
     setAmount,
     setValueCurrencyFrom,
     setValueCurrencyTo,
+    handleClickReverse,
     handleConvert,
   } = useContext(ContextExchangeConverter);
   return (
@@ -23,6 +26,7 @@ const ConverterForm = () => {
           value={converter.from}
           options={converter.list}
         />
+        <ExchangeButtonReverse onClick={handleClickReverse} />
         <Form.Label className='text-center d-block'> Convert To </Form.Label>
         <CurrencySelect
           handleChange={setValueCurrencyTo}
@@ -46,6 +50,6 @@ const ConverterForm = () => {
       </div>
     </Form>
   );
-};
+});
 
-export default ConverterForm;
+export default React.memo(ConverterForm);

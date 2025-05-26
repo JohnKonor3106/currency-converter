@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { memo, useContext } from 'react';
 import { ContextExchangeConverter } from '../../../Providers/ProviderExchangeConverter';
 
 const baseResultStyle = {
@@ -17,7 +17,7 @@ const baseResultStyle = {
   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
 };
 
-const ConvertDisplay = () => {
+const ConvertDisplay = memo(() => {
   const { converter } = useContext(ContextExchangeConverter);
   const { result, loading, error } = converter;
 
@@ -44,6 +44,6 @@ const ConvertDisplay = () => {
   };
 
   return <div style={currentResultStyle}>{content}</div>;
-};
+});
 
 export default ConvertDisplay;

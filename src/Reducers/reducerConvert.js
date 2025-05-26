@@ -9,6 +9,12 @@ const reducerConvert = (draft, action) => {
     case 'ADD_CURRENCY_AMOUNT':
       draft.amount = action.payload;
       break;
+    case 'REVERSE_CURRENCY':
+      const temp = draft.from;
+      console.log(temp);
+      draft.from = draft.to;
+      draft.to = temp;
+      break;
     case 'CURRENCY_CONVERTING':
       draft.result = action.payload;
       break;

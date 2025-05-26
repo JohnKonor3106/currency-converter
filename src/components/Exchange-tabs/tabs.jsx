@@ -1,11 +1,11 @@
 import { ContextExchangeTabs } from '../../Providers/ProviderExchangeTabs';
 import ExchangeChart from '../Exchange_historical/ExchangeChart';
 import { Tabs, Tab } from 'react-bootstrap';
-import { useContext } from 'react';
+import { memo, useContext } from 'react';
 import ConverterForm from '../Exchange-converter/Form/ConverterForm';
 import ExchangeTable from '../Exchange-rate-table/Table';
 
-const ExchangeTab = () => {
+const ExchangeTab = memo(() => {
   const { stateTab, handleActiveTab } = useContext(ContextExchangeTabs);
   const renderTabContent = title => {
     if (title === 'Converter') {
@@ -22,6 +22,7 @@ const ExchangeTab = () => {
     <Tabs
       activeKey={stateTab.active}
       transition={true}
+      unmountOnExit={true}
       onSelect={eventKey => handleActiveTab(eventKey)}
       className='mb-3'
     >
@@ -32,5 +33,5 @@ const ExchangeTab = () => {
       ))}
     </Tabs>
   );
-};
+});
 export default ExchangeTab;
