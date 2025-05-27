@@ -1,7 +1,8 @@
 import React from 'react';
+import { memo } from 'react';
 import { Form } from 'react-bootstrap';
 
-const CurrencySelect = ({ options, handleChange, value }) => {
+const CurrencySelect = memo(({ options, handleChange, value }) => {
   return (
     <Form.Select
       onChange={handleChange} // Передаем прямо переданный handleChange
@@ -21,6 +22,6 @@ const CurrencySelect = ({ options, handleChange, value }) => {
       ))}
     </Form.Select>
   );
-};
+});
 
 export default CurrencySelect;

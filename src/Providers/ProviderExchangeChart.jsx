@@ -1,15 +1,21 @@
+// ProviderExchangeChart.jsx
 import { useImmerReducer } from 'use-immer';
 import { uniqueId } from 'lodash';
-import { useContext, useMemo } from 'react';
+import { useContext, useMemo, useCallback, useEffect } from 'react';
 import React from 'react';
 import reducerExchangeChart from '../Reducers/reducerExchangeChart';
 import { ContextGlobalError } from './ProviderGlobalError';
-import getExchangeChart from '../components/Services/exchangeChartApi';
+import getExchangeChart from '../Services/exchangeChartApi';
+import { getChartDataByPeriod } from '../Utils/utils';
 
 export const ContextExchangeChart = React.createContext({});
 
 const initState = {
-  exchangeData: null,
+  historicalChart: {
+    fixedExchangeChartData: [],
+    data: [],
+    currentPeriod: 'All',
+  },
   currency: {
     list: [
       { code: 'USD', id: uniqueId('curr-') },
@@ -19,6 +25,8 @@ const initState = {
     from: '',
     to: '',
   },
+  loading: false,
+  hasFullChartDataLoaded: false,
 };
 
 const ProviderExchangeChart = ({ children }) => {
@@ -28,43 +36,93 @@ const ProviderExchangeChart = ({ children }) => {
   );
   const { handleError } = useContext(ContextGlobalError);
 
-  const setExchangeChartFrom = e => {
-    dispatch({ type: 'ADD_CURRENCY_FOR_CHART_FROM', payload: e.target.value });
-    console.log(stateExchangeChart.currency.from);
-  };
+  const setExchangeChartFrom = useCallback(
+    e => {
+      dispatch({
+        type: 'ADD_CURRENCY_FOR_CHART_FROM',
+        payload: e.target.value,
+      });
+    },
+    [dispatch]
+  );
 
-  const setExchangeChartTo = e => {
-    dispatch({ type: 'ADD_CURRENCY_FOR_CHART_TO', payload: e.target.value });
-    console.log(stateExchangeChart.currency.to);
-  };
+  const setExchangeChartTo = useCallback(
+    e => {
+      dispatch({ type: 'ADD_CURRENCY_FOR_CHART_TO', payload: e.target.value });
+    },
+    [dispatch]
+  );
 
-  const handleExchangeChart = async () => {
+  const setExchangeChartPeriod = useCallback(
+    eventKey => {
+      dispatch({ type: 'ADD_EXCHANGE_CHART_PERIOD', payload: eventKey });
+    },
+    [dispatch]
+  );
+
+  const handleExchangeChart = useCallback(async () => {
     const { from, to } = stateExchangeChart.currency;
+    const { currentPeriod, fixedExchangeChartData } =
+      stateExchangeChart.historicalChart;
+
+    if (!from || !to) {
+      handleError(new Error('Пожалуйста, выберите обе валюты для графика.'));
+      return;
+    }
+
     try {
       dispatch({ type: 'LOADING_DATA', payload: true });
-      const exchangeChartData = await getExchangeChart({ from, to });
 
-      dispatch({ type: 'ADD_EXCHANGE_CHART_DATA', payload: exchangeChartData });
-      dispatch({ type: 'LOADING_DATA', payload: false });
+      let dataToFilter = fixedExchangeChartData;
+
+      if (!fixedExchangeChartData.length) {
+        const apiData = await getExchangeChart({ from, to });
+        dataToFilter = apiData;
+        dispatch({
+          type: 'SET_FULL_CHART_DATA',
+          payload: apiData,
+        });
+        dispatch({ type: 'SET_HAS_FULL_CHART_DATA_LOADED', payload: true });
+      }
+
+      const filtered = getChartDataByPeriod(dataToFilter, currentPeriod);
+
+      dispatch({
+        type: 'SET_DISPLAYED_CHART_DATA',
+        payload: filtered,
+      });
     } catch (error) {
       handleError(error);
+      console.error(
+        'Ошибка при получении или фильтрации графика валют:',
+        error.message
+      );
+    } finally {
       dispatch({ type: 'LOADING_DATA', payload: false });
-      console.error('Ошибка при получение графикв валют:', error.message);
     }
-  };
+  }, [
+    stateExchangeChart.currency.from,
+    stateExchangeChart.currency.to,
+    stateExchangeChart.historicalChart.fixedExchangeChartData,
+    stateExchangeChart.historicalChart.currentPeriod,
+    dispatch,
+    handleError,
+  ]);
 
   const valueExchangeChart = useMemo(
     () => ({
       exchangeChart: stateExchangeChart,
-      setExchangeChartFrom: setExchangeChartFrom,
-      setExchangeChartTo: setExchangeChartTo,
-      handleExchangeChart: handleExchangeChart,
+      setExchangeChartFrom,
+      setExchangeChartTo,
+      handleExchangeChart,
+      setExchangeChartPeriod,
     }),
     [
       stateExchangeChart,
       setExchangeChartFrom,
       setExchangeChartTo,
       handleExchangeChart,
+      setExchangeChartPeriod,
     ]
   );
 

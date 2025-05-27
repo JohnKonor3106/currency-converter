@@ -1,8 +1,8 @@
 import Form from 'react-bootstrap/Form';
 import { ContextExchangeRate } from '../../Providers/ProviderExchangeRate';
-import { useContext } from 'react';
+import React, { useContext } from 'react';
 
-const ExchangeFindRate = () => {
+const ExchangeFindRate = React.memo(() => {
   const { handleFindRate, tern } = useContext(ContextExchangeRate);
   return (
     <Form.Control
@@ -13,6 +13,6 @@ const ExchangeFindRate = () => {
       onChange={handleFindRate}
     />
   );
-};
+});
 
 export default ExchangeFindRate;

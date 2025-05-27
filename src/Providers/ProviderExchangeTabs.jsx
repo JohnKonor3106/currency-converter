@@ -1,7 +1,7 @@
 import React from 'react';
 import { uniqueId } from 'lodash';
 import { useImmerReducer } from 'use-immer';
-import { useContext, useEffect, useMemo } from 'react';
+import { useContext, useEffect, useMemo, useCallback } from 'react';
 import { ContextGlobalError } from './ProviderGlobalError';
 import reducerExchangeTabs from '../Reducers/reducerExchangeTabs';
 
@@ -20,19 +20,22 @@ const ProviderExchangeTabs = ({ children }) => {
   const [tabs, dispatch] = useImmerReducer(reducerExchangeTabs, initStateTabs);
   const { handleError, handleClearError } = useContext(ContextGlobalError);
 
-  const handleActiveTab = eventKey => {
-    try {
-      if (!eventKey) {
-        throw new Error('Ошибка! Активного ключа таба не найдено.');
+  const handleActiveTab = useCallback(
+    eventKey => {
+      try {
+        if (!eventKey) {
+          throw new Error('Ошибка! Активного ключа таба не найдено.');
+        }
+        dispatch({
+          type: 'CHANGE_ACTIVE_TAB',
+          payload: eventKey,
+        });
+      } catch (error) {
+        handleError(error);
       }
-      dispatch({
-        type: 'CHANGE_ACTIVE_TAB',
-        payload: eventKey,
-      });
-    } catch (error) {
-      handleError(error);
-    }
-  };
+    },
+    [dispatch, handleError]
+  );
 
   useEffect(() => {
     handleClearError();

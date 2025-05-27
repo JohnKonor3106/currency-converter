@@ -6,7 +6,7 @@ import CurrencySelect from '../Exchange-converter/Select/CurrencySelect';
 import { ContextExchangeRate } from '../../Providers/ProviderExchangeRate';
 import ExchangeFindRate from './ExchangeFindRate';
 
-const Row = ({ index, style, data, isScrolling }) => {
+const Row = memo(({ index, style, data, isScrolling }) => {
   const [_, currency] = data[index];
   const [code, value] = currency.flat();
 
@@ -26,7 +26,7 @@ const Row = ({ index, style, data, isScrolling }) => {
       </div>
     </div>
   );
-};
+});
 
 const ExchangeTable = memo(() => {
   const { exchangeRate, setBasicCode, handleConversionRates } =

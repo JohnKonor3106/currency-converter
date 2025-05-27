@@ -1,7 +1,7 @@
 import { useImmerReducer } from 'use-immer';
 import React from 'react';
 import reducerGlobalError from '../Reducers/reducerGlobalError';
-import { useCallback } from 'react';
+import { useCallback, memo, useMemo } from 'react';
 
 export const ContextGlobalError = React.createContext({});
 
@@ -23,14 +23,17 @@ const ProviderGlobalError = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
   }, [dispatch]);
 
+  const valueError = useMemo(
+    () => ({
+      errors: errors,
+      handleError: handleError,
+      handleClearError: handleClearError,
+    }),
+    [errors, handleError, handleClearError]
+  );
+
   return (
-    <ContextGlobalError.Provider
-      value={{
-        errors: errors,
-        handleError: handleError,
-        handleClearError: handleClearError,
-      }}
-    >
+    <ContextGlobalError.Provider value={valueError}>
       {children}
     </ContextGlobalError.Provider>
   );

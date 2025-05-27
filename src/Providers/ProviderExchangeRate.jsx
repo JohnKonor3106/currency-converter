@@ -1,10 +1,10 @@
 import { useImmerReducer } from 'use-immer';
 import { uniqueId } from 'lodash';
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useContext } from 'react';
 import { ContextGlobalError } from './ProviderGlobalError';
 import reducerExchangeRate from '../Reducers/reducerExchangeRate';
-import getExchangeRate from '../components/Services/exchangeApi';
+import getExchangeRate from '../Services/exchangeApi';
 
 export const ContextExchangeRate = React.createContext({});
 
@@ -28,13 +28,17 @@ const ProviderExchangeRate = ({ children }) => {
   );
   const { handleError } = useContext(ContextGlobalError);
 
-  const setBasicCode = e => {
-    dispatch({ type: 'ADD_BASE_CODE_CURRENCY', payload: e.target.value });
-  };
+  const setBasicCode = useCallback(
+    e => {
+      dispatch({ type: 'ADD_BASE_CODE_CURRENCY', payload: e.target.value });
+    },
+    [dispatch]
+  );
 
-  const handleConversionRates = async () => {
+  const handleConversionRates = useCallback(async () => {
     try {
       dispatch({ type: 'LOADING_DATA', payload: true });
+
       const exchangeRateData = await getExchangeRate(
         stateExchangeRate.basicCode
       );
@@ -46,17 +50,19 @@ const ProviderExchangeRate = ({ children }) => {
       dispatch({ type: 'LOADING_DATA', payload: false });
       console.error('Ошибка при получение курса валют:', error.message);
     }
-  };
+  }, [dispatch, stateExchangeRate.basicCode, handleError]);
 
-  const handleFindRate = e => {
-    const newTernValue = e.target.value;
+  const handleFindRate = useCallback(
+    e => {
+      dispatch({ type: 'ADD_VALUE_TERN', payload: e.target.value });
 
-    dispatch({ type: 'ADD_VALUE_TERN', payload: newTernValue });
-    dispatch({
-      type: 'FIND_CURRENCY',
-      payload: { tern: newTernValue },
-    });
-  };
+      dispatch({
+        type: 'FIND_CURRENCY',
+        payload: { tern: e.target.value },
+      });
+    },
+    [dispatch]
+  );
 
   const valueExchangeRate = useMemo(
     () => ({

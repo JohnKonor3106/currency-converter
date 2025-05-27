@@ -13,6 +13,7 @@ import ExchangeButton from '../Exchange-converter/Button/ExchangeButton';
 import React, { useContext, memo } from 'react';
 import { ContextExchangeChart } from '../../Providers/ProviderExchangeChart';
 import CurrencySelect from '../Exchange-converter/Select/CurrencySelect';
+import ExchangeDropDown from './ExchangeDropdown';
 
 const ExchangeChart = memo(() => {
   const {
@@ -22,10 +23,11 @@ const ExchangeChart = memo(() => {
     setExchangeChartTo,
   } = useContext(ContextExchangeChart);
 
-  const { exchangeData } = exchangeChart;
+  const { data } = exchangeChart.historicalChart;
 
   return (
     <div className='d-block w-50 mx-auto mt-5'>
+      <ExchangeDropDown />
       <CurrencySelect
         options={exchangeChart.currency.list}
         value={exchangeChart.currency.from}
@@ -37,12 +39,12 @@ const ExchangeChart = memo(() => {
         handleChange={setExchangeChartTo}
       />
       {/* Moved the conditional rendering inside the fragment */}
-      {!exchangeData ? (
+      {!data || data.length === 0 ? (
         <div className='mt-5 mb-5 text-center'> НЕТ ДАННЫХ </div>
       ) : (
         <ResponsiveContainer width='100%' height={250}>
           <LineChart
-            data={exchangeData}
+            data={data}
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray='3 3' />
