@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import prettier from 'eslint-plugin-prettier'; // Добавляем Prettier плагин
 import prettierConfig from 'eslint-config-prettier'; // Добавляем Prettier конфиг
+import tanstackQuery from 'eslint-plugin-tanstack-query';
 
 export default [
   { ignores: ['dist'] },
@@ -22,6 +23,7 @@ export default [
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       prettier, // Добавляем плагин Prettier
+      'tanstack-query': tanstackQuery,
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -33,6 +35,9 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+      '@tanstack/query/exhaustive-deps': 'error',
+      '@tanstack/query/no-unstable-deps': 'error',
+      '@tanstack/query/stable-query-client': 'error',
     },
   },
 ];
