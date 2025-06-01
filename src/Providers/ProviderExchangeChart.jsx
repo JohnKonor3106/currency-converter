@@ -1,21 +1,18 @@
-// ProviderExchangeChart.jsx
 import { useImmerReducer } from 'use-immer';
 import { uniqueId } from 'lodash';
-import { useContext, useMemo, useCallback, useEffect } from 'react';
-import React from 'react';
+import React, { useContext, useMemo, useCallback, useEffect } from 'react';
 import reducerExchangeChart from '../Reducers/reducerExchangeChart';
 import { ContextGlobalError } from './ProviderGlobalError';
 import getExchangeChart from '../Services/exchangeChartApi';
 import { getChartDataByPeriod } from '../Utils/utils';
+import validateInputsChart from '../Utils/validateInputsChart';
+import { useQuery } from '@tanstack/react-query';
 
 export const ContextExchangeChart = React.createContext({});
 
 const initState = {
-  historicalChart: {
-    fixedExchangeChartData: [],
-    data: [],
-    currentPeriod: 'All',
-  },
+  currentExchangeRateData: [],
+  currentPeriod: 'All',
   currency: {
     list: [
       { code: 'USD', id: uniqueId('curr-') },
@@ -25,8 +22,7 @@ const initState = {
     from: '',
     to: '',
   },
-  loading: false,
-  hasFullChartDataLoaded: false,
+  localErrors: {},
 };
 
 const ProviderExchangeChart = ({ children }) => {
@@ -35,6 +31,8 @@ const ProviderExchangeChart = ({ children }) => {
     initState
   );
   const { handleError } = useContext(ContextGlobalError);
+
+  const { currency, currentPeriod } = stateExchangeChart;
 
   const setExchangeChartFrom = useCallback(
     e => {
@@ -60,69 +58,72 @@ const ProviderExchangeChart = ({ children }) => {
     [dispatch]
   );
 
-  const handleExchangeChart = useCallback(async () => {
-    const { from, to } = stateExchangeChart.currency;
-    const { currentPeriod, fixedExchangeChartData } =
-      stateExchangeChart.historicalChart;
+  const {
+    data: rawExchangeChartData,
+    isFetching,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: ['exchangeRateChart', currency.from, currency.to],
+    queryFn: async () => {
+      return getExchangeChart(currency.from, currency.to);
+    },
+    enabled: !!currency.from && !!currency.to,
+    staleTime: 1000 * 60 * 30,
+    cacheTime: 1000 * 60 * 60 * 24,
+  });
 
-    if (!from || !to) {
-      handleError(new Error('Пожалуйста, выберите обе валюты для графика.'));
-      return;
-    }
-
-    try {
-      dispatch({ type: 'LOADING_DATA', payload: true });
-
-      let dataToFilter = fixedExchangeChartData;
-
-      if (!fixedExchangeChartData.length) {
-        const apiData = await getExchangeChart({ from, to });
-        dataToFilter = apiData;
-        dispatch({
-          type: 'SET_FULL_CHART_DATA',
-          payload: apiData,
-        });
-        dispatch({ type: 'SET_HAS_FULL_CHART_DATA_LOADED', payload: true });
-      }
-
-      const filtered = getChartDataByPeriod(dataToFilter, currentPeriod);
-
-      dispatch({
-        type: 'SET_DISPLAYED_CHART_DATA',
-        payload: filtered,
-      });
-    } catch (error) {
+  useEffect(() => {
+    if (error) {
       handleError(error);
-      console.error(
-        'Ошибка при получении или фильтрации графика валют:',
-        error.message
-      );
-    } finally {
-      dispatch({ type: 'LOADING_DATA', payload: false });
+      dispatch({ type: 'SET_LOCAL_ERROR_FROM_QUERY', payload: error.message });
+    } else {
+      dispatch({ type: 'CLEAR_LOCAL_ERRORS' });
     }
-  }, [
-    stateExchangeChart.currency.from,
-    stateExchangeChart.currency.to,
-    stateExchangeChart.historicalChart.fixedExchangeChartData,
-    stateExchangeChart.historicalChart.currentPeriod,
-    dispatch,
-    handleError,
-  ]);
+  }, [error, handleError, dispatch]);
+
+  useEffect(() => {
+    if (rawExchangeChartData) {
+      const filteredData = getChartDataByPeriod(
+        rawExchangeChartData,
+        currentPeriod
+      );
+      dispatch({
+        type: 'ADD_EXCHANGE_CHART_DATA',
+        payload: filteredData,
+      });
+    } else {
+      dispatch({
+        type: 'ADD_EXCHANGE_CHART_DATA',
+        payload: [],
+      });
+    }
+  }, [rawExchangeChartData, currentPeriod, dispatch]);
+
+  const triggerValidation = useCallback(() => {
+    validateInputsChart(currency.from, currency.to, dispatch);
+  }, [currency.from, currency.to, dispatch]);
 
   const valueExchangeChart = useMemo(
     () => ({
       exchangeChart: stateExchangeChart,
       setExchangeChartFrom,
       setExchangeChartTo,
-      handleExchangeChart,
       setExchangeChartPeriod,
+      isFetching,
+      isLoading,
+      queryError: error,
+      triggerValidation,
     }),
     [
       stateExchangeChart,
       setExchangeChartFrom,
       setExchangeChartTo,
-      handleExchangeChart,
       setExchangeChartPeriod,
+      isFetching,
+      isLoading,
+      error,
+      triggerValidation,
     ]
   );
 

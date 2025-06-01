@@ -4,21 +4,27 @@ import ProviderExchangeConverter from './Providers/ProviderExchangeConverter';
 import ProviderExchangeRate from './Providers/ProviderExchangeRate';
 import ProviderExchangeChart from './Providers/ProviderExchangeChart';
 import ProviderExchangeTabs from './Providers/ProviderExchangeTabs';
+import { QueryClientProvider } from '@tanstack/react-query';
+import queryClient from './queryClient';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 function App() {
   return (
     <>
-      <ProviderGlobalError>
-        <ProviderExchangeTabs>
-          <ProviderExchangeConverter>
-            <ProviderExchangeRate>
-              <ProviderExchangeChart>
-                <ExchangeTab />
-              </ProviderExchangeChart>
-            </ProviderExchangeRate>
-          </ProviderExchangeConverter>
-        </ProviderExchangeTabs>
-      </ProviderGlobalError>
+      <QueryClientProvider client={queryClient}>
+        <ProviderGlobalError>
+          <ProviderExchangeTabs>
+            <ProviderExchangeConverter>
+              <ProviderExchangeRate>
+                <ProviderExchangeChart>
+                  <ExchangeTab />
+                </ProviderExchangeChart>
+              </ProviderExchangeRate>
+            </ProviderExchangeConverter>
+          </ProviderExchangeTabs>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </ProviderGlobalError>
+      </QueryClientProvider>
     </>
   );
 }

@@ -1,9 +1,10 @@
 import { useImmerReducer } from 'use-immer';
-import React, { useContext, useMemo, useCallback } from 'react';
+import React, { useContext, useMemo, useCallback, useEffect } from 'react';
 import reducerConvert from '../Reducers/reducerConvert';
 import { ContextGlobalError } from './ProviderGlobalError';
 import { uniqueId } from 'lodash';
 import convertCurrency from '../Services/converterApi';
+import validateInputsConvert from '../Utils/validateInputsConvert';
 
 export const ContextExchangeConverter = React.createContext({});
 
@@ -14,10 +15,13 @@ const initState = {
     { code: 'RUB', id: uniqueId('curr-') },
     { code: 'EUR', id: uniqueId('curr-') },
   ],
+  cachedDataCurrency: {},
   from: '',
   to: '',
+  isConverterCashed: false,
   result: null,
   loading: false,
+  localErrors: {},
 };
 
 const ProviderExchangeConverter = ({ children }) => {
@@ -51,24 +55,64 @@ const ProviderExchangeConverter = ({ children }) => {
 
   const handleConvert = useCallback(async () => {
     const { amount, from, to } = stateConverter;
-    try {
-      dispatch({ type: 'ADD_CONVERTER_LOADING_DATA', payload: true });
-      const currencyRate = await convertCurrency({ amount, from, to });
+    const numericAmount = Number(amount);
+    dispatch({ type: 'CLEAR_LOCAL_ERRORS' });
 
-      dispatch({ type: 'CURRENCY_CONVERTING', payload: currencyRate.result });
-      dispatch({ type: 'ADD_CONVERTER_LOADING_DATA', payload: false });
+    const isValidateSucces = validateInputsConvert(from, to, amount, dispatch);
+
+    if (isValidateSucces) {
+      return;
+    }
+
+    const cacheKey = `${from}_${to}`;
+    const cachedConversion = stateConverter.cachedDataCurrency?.[cacheKey];
+
+    try {
+      if (cachedConversion?.rate) {
+        const cachedResult = cachedConversion.rate * numericAmount;
+        dispatch({
+          type: 'CURRENCY_CONVERTING',
+          payload: {
+            result: cachedResult,
+            rate: cachedConversion.rate,
+            cacheKey: cacheKey,
+          },
+        });
+        dispatch({ type: 'SET_CONVERTER_CACHED_STATUS', payload: true });
+      } else {
+        dispatch({ type: 'ADD_CONVERTER_LOADING_DATA', payload: true });
+        const currencyData = await convertCurrency({
+          amount: numericAmount,
+          from,
+          to,
+        });
+
+        dispatch({
+          type: 'CURRENCY_CONVERTING',
+          payload: {
+            result: currencyData.result,
+            rate: currencyData.rate,
+            cacheKey: cacheKey,
+          },
+        });
+        dispatch({ type: 'ADD_CONVERTER_LOADING_DATA', payload: false });
+        dispatch({ type: 'SET_CONVERTER_CACHED_STATUS', payload: false });
+      }
     } catch (error) {
       handleError(error);
       dispatch({ type: 'ADD_CONVERTER_LOADING_DATA', payload: false });
-      console.error('Ошибка при конвертации валюты:', error.message);
     }
-  }, [
-    stateConverter.amount,
-    stateConverter.from,
-    stateConverter.to,
-    dispatch,
-    handleError,
-  ]);
+  }, [stateConverter, dispatch, handleError]);
+
+  useEffect(() => {
+    let timer;
+    if (stateConverter.isConverterCashed) {
+      timer = setTimeout(() => {
+        dispatch({ type: 'SET_CONVERTER_CACHED_STATUS', payload: false });
+      }, 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [stateConverter.isConverterCashed, dispatch]);
 
   const valueProviderConvert = useMemo(
     () => ({

@@ -11,6 +11,7 @@ const ExchangeFindRate = React.memo(() => {
       value={tern}
       placeholder='Сurrency search '
       onChange={handleFindRate}
+      className='mt-5'
     />
   );
 });

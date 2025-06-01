@@ -1,8 +1,8 @@
-const errorHandling = errors => {
+const errorHandling = error => {
   let errorMessage;
 
-  if (errors) {
-    switch (errorType) {
+  if (error) {
+    switch (error.message) {
       case 'unsupported-code':
         errorMessage = 'Неподдерживаемый код валюты.';
         break;
@@ -18,12 +18,17 @@ const errorHandling = errors => {
       case 'quota-reached':
         errorMessage = 'Превышена квота запросов к API.';
         break;
+      case 'Ошибка при конвертации валюты':
+        errorMessage = 'Пожалуйста, заполните все поля.';
+        break;
       default:
-        errorMessage = `Ошибка API: ${errorType}`;
+        errorMessage = `Ошибка API: ${error.message || 'Неизвестная ошибка'}`;
     }
+  } else {
+    errorMessage = 'Неизвестная ошибка';
   }
 
-  return errorMessage;
+  return { message: errorMessage, originalError: error };
 };
 
 export const getChartDataByPeriod = (allHistoricalData, period) => {
@@ -45,18 +50,17 @@ export const getChartDataByPeriod = (allHistoricalData, period) => {
   }
 
   const today = new Date();
-  const limitDate = new Date();
+  const limitDate = new Date(today);
 
   limitDate.setDate(today.getDate() - daysLimit);
+  limitDate.setHours(0, 0, 0, 0);
 
   const startIndex = allHistoricalData.findIndex(item => {
     return new Date(item.date).getTime() >= limitDate.getTime();
   });
 
   if (startIndex === -1) {
-    return allHistoricalData.length > 0
-      ? [allHistoricalData[allHistoricalData.length - 1]]
-      : [];
+    return [];
   }
   return allHistoricalData.slice(startIndex);
 };

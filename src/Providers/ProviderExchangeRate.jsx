@@ -1,10 +1,11 @@
 import { useImmerReducer } from 'use-immer';
 import { uniqueId } from 'lodash';
-import React, { useMemo, useCallback } from 'react';
-import { useContext } from 'react';
+import React, { useMemo, useCallback, useEffect, useContext } from 'react';
 import { ContextGlobalError } from './ProviderGlobalError';
 import reducerExchangeRate from '../Reducers/reducerExchangeRate';
 import getExchangeRate from '../Services/exchangeApi';
+import getDinamicRiseCurrency from '../Utils/dinamicRiseCurrency';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 export const ContextExchangeRate = React.createContext({});
 
@@ -15,10 +16,12 @@ const initState = {
     { code: 'RUB', id: uniqueId('curr-') },
     { code: 'EUR', id: uniqueId('curr-') },
   ],
-  currencyExchangeRate: null,
-  initCurrencyExchangeRate: null,
+  currentExchangeRate: null,
+  fullExchangeRateData: null,
   tern: '',
+  isCashed: false, // будет нужен для уведомления пользавателей
   loading: false,
+  localErrors: {}, // пока под вопросом
 };
 
 const ProviderExchangeRate = ({ children }) => {
@@ -27,6 +30,7 @@ const ProviderExchangeRate = ({ children }) => {
     initState
   );
   const { handleError } = useContext(ContextGlobalError);
+  const queryClient = useQueryClient();
 
   const setBasicCode = useCallback(
     e => {
@@ -35,43 +39,88 @@ const ProviderExchangeRate = ({ children }) => {
     [dispatch]
   );
 
-  const handleConversionRates = useCallback(async () => {
-    try {
-      dispatch({ type: 'LOADING_DATA', payload: true });
+  const {
+    data: exchangeRateData,
+    isFetching,
+    error,
+  } = useQuery({
+    queryKey: ['exchangeRate', stateExchangeRate.basicCode],
+    queryFn: async () => {
+      if (!stateExchangeRate.basicCode) {
+        throw new Error('Базовая валюта не выбрана');
+      }
+      console.log('api');
+      return getExchangeRate(stateExchangeRate.basicCode);
+    },
+    select: apiData => {
+      const oldExchangeRate = queryClient.getQueryData([
+        'exchangeRate',
+        stateExchangeRate.basicCode,
+      ]);
 
-      const exchangeRateData = await getExchangeRate(
-        stateExchangeRate.basicCode
-      );
+      return getDinamicRiseCurrency(oldExchangeRate, apiData);
+    },
+    enabled: !!stateExchangeRate.basicCode,
+  });
 
-      dispatch({ type: 'ADD_EXCHANGE_RATE_DATA', payload: exchangeRateData });
-      dispatch({ type: 'LOADING_DATA', payload: false });
-    } catch (error) {
-      handleError(error);
-      dispatch({ type: 'LOADING_DATA', payload: false });
-      console.error('Ошибка при получение курса валют:', error.message);
+  useEffect(() => {
+    if (isFetching) {
+      dispatch({ type: 'LOADING_DATA', payload: isFetching });
     }
-  }, [dispatch, stateExchangeRate.basicCode, handleError]);
+  }, [isFetching, dispatch]);
+
+  useEffect(() => {
+    if (error) {
+      handleError(error);
+      dispatch({
+        type: 'SET_TABLE_RATE_ERROR',
+        payload: { type: 'currency_rate', description: error.message },
+      });
+    } else {
+      dispatch({ type: 'CLEAR_LOCAL_ERRORS' });
+    }
+  }, [error, handleError, dispatch]);
+
+  useEffect(() => {
+    if (exchangeRateData) {
+      dispatch({
+        type: 'ADD_EXCHANGE_RATE_DATA', // Это действие просто устанавливает currentExchangeRate
+        payload: exchangeRateData, // exchangeRateData уже содержит динамику
+      });
+      dispatch({ type: 'ADD_CASHED_EXCHANGE_RATE', payload: true });
+    }
+  }, [exchangeRateData, dispatch]);
 
   const handleFindRate = useCallback(
     e => {
-      dispatch({ type: 'ADD_VALUE_TERN', payload: e.target.value });
+      const newTern = e.target.value;
+      dispatch({ type: 'ADD_VALUE_TERN', payload: newTern });
 
       dispatch({
         type: 'FIND_CURRENCY',
-        payload: { tern: e.target.value },
+        payload: { tern: newTern },
       });
     },
     [dispatch]
   );
 
+  useEffect(() => {
+    let timer;
+    if (stateExchangeRate.isCashed) {
+      timer = setTimeout(() => {
+        dispatch({ type: 'ADD_CASHED_EXCHANGE_RATE', payload: false });
+      }, 5000);
+    }
+    return () => clearTimeout(timer);
+  }, [stateExchangeRate.isCashed, dispatch]);
+
   const valueExchangeRate = useMemo(
     () => ({
       exchangeRate: stateExchangeRate,
       setBasicCode: setBasicCode,
-      handleConversionRates: handleConversionRates,
       handleFindRate: handleFindRate,
     }),
-    [stateExchangeRate, setBasicCode, handleConversionRates, handleFindRate]
+    [stateExchangeRate, setBasicCode, handleFindRate]
   );
 
   return (

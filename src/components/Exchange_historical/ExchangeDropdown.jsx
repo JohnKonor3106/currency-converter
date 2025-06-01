@@ -7,12 +7,11 @@ import { useContext } from 'react';
 const ExchangeDropDown = React.memo(() => {
   const { setExchangeChartPeriod, exchangeChart } =
     useContext(ContextExchangeChart);
-  const { historicalChart } = exchangeChart;
   return (
     <DropdownButton
       drop='start'
       id='dropdown-basic-button'
-      title={historicalChart.currentPeriod}
+      title={exchangeChart.currentPeriod}
       size='lg'
       className='mb-5'
       onSelect={e => setExchangeChartPeriod(e)}
